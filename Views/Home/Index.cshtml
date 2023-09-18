@@ -1,0 +1,55 @@
+﻿@using Payroll.Core
+
+@model Employee
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h2>User Details</h2>
+<hr />
+<br />
+
+<div id="form">
+    @(
+        Html.DevExtreme().Form<Employee>()
+            .ID("form")
+            .ReadOnly(true)
+            .Items(_ =>
+            {
+                _.AddGroup()
+                .CssClass("second-group")
+                .ColCount(2)
+                .Items(_ =>
+                {
+                    _.AddGroup().Items(_ =>
+                    {
+                        _.AddSimpleFor(_ => _.FirstName).IsRequired(false);
+                        _.AddSimpleFor(_ => _.LastName).IsRequired(false);
+                        _.AddSimpleFor(_ => _.Email).IsRequired(false);
+
+                        if(User.IsInRole(Constant.Roles.Employee))
+                        {
+                            _.AddSimpleFor(_ => _.EmployeeNumber).IsRequired(false);
+                            _.AddSimpleFor(_ => _.MiddleName).IsRequired(false);
+                            _.AddSimpleFor(_ => _.MaidenName).IsRequired(false);
+                            _.AddSimpleFor(_ => _.PreferredName).IsRequired(false);
+                            _.AddSimpleFor(_ => _.Initials).IsRequired(false);
+                            _.AddSimpleFor(_ => _.TitleId)
+                                .IsRequired(false)
+                                .Editor(_ => _.SelectBox()
+                                .DataSource(
+                                _ => _.Mvc()
+                                        .Controller("EnumTitlesLookupWebAPI")
+                                        .LoadAction("Get").Key("TitleId"))
+                                        .DisplayExpr("Description")
+                                        .ValueExpr("TitleId")
+                                );
+                            _.AddSimpleFor(_ => _.EmployeeRetired).IsRequired(false);
+                        }
+                });
+            });
+        })
+        .FormData(Model)
+        )
+</div>

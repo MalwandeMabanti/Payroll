@@ -1,0 +1,78 @@
+﻿:root {
+    --primary: #89B537;
+    --caution: #FF5D60;
+    --secondary: #666;
+}
+
+.container .banner{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    height: 2.5rem;
+    padding: 0;
+    background: var(--secondary);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.container .banner .icon{
+    background: var(--primary);
+    height: 100%;
+    width: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container main :is(a, button) {
+    background: none;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    outline: none;
+    transition: 300ms ease-in-out background, 300ms ease-in-out color;
+}
+
+.container main :is(a:is(:hover, :focus), button:is(:hover, :focus)) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.container main form .form-group {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0 1rem 0;
+}
+
+.container main form .form-group label {
+    display: inline-block;
+    width: 10rem
+}
+
+
+.form-group.hide{
+    display: none !important;
+}
+
+.container table{
+    border: none;
+    margin-top: 1rem;
+}
+
+.container table thead.thead-dark{
+    border: none;
+    background: black;
+    color: white;
+    padding: 1.3rem 0;
+}
+
+.container table :is(thead, th, tr, td){
+    border: none;
+}
+
+.container table tbody tr:nth-child(odd) {
+    background: #EDEDED;
+}

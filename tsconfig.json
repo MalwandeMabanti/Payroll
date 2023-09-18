@@ -1,0 +1,13 @@
+﻿{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "wwwroot/js/pages",
+    "sourceMap": true
+  },
+  "include": [
+    "wwwroot/js/pages/**/*.ts"
+  ],
+  "exclude": []
+}

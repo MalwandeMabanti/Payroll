@@ -1,0 +1,182 @@
+﻿<link rel="stylesheet" href="~/css//pages/Employee.css" />
+
+<div class="emp__header">
+    <h2>Employees</h2>
+
+    @(Html.DevExtreme().Button()
+        .ElementAttr("class", "button-info")
+        .Text("Audit")
+        .OnClick(@<text>
+            function showInfo(data) {
+                const popup = $("#audit-details").dxPopup("instance");
+                const datagrid = $("#audit-datagrid").dxDataGrid("instance");
+
+                if (datagrid) {
+                    datagrid.refresh();
+                }
+
+                popup.show();
+            }
+        </text>)
+     )
+</div>
+
+<hr />
+
+<div id="audit-popup">
+    @(
+        Html.DevExtreme().Popup()
+        .ID("audit-details")
+        .MaxHeight(500)
+        .Height("auto")
+        .Width("80%")
+        .Container("body")
+        .ShowTitle(true)
+        .Title("Audit Trail: Employees")
+        .HideOnOutsideClick(true)
+        .DragEnabled(false)
+        .ShowCloseButton(true)
+        .Position(_ =>
+        _.At(HorizontalAlignment.Center, VerticalAlignment.Center)
+        )
+        .ContentTemplate(new TemplateName("popup-template"))
+        )
+
+    @using (Html.DevExtreme().NamedTemplate("popup-template"))
+    {
+        @(Html.DevExtreme().DataGrid<Payroll.Models.Audit>()
+            .ID("audit-datagrid")
+            .Scrolling(_ => _.UseNative(true))
+            .Height("100%")
+            .DataSource(_ => _.Mvc()
+            .Controller("AuditWebAPI")
+            .LoadAction("Get").LoadParams(new { tableName = "Employee" })
+            )
+            .ShowBorders(true)
+            .ShowRowLines(true)
+            .WordWrapEnabled(true)
+            .Editing(_ =>
+            {
+                _.AllowUpdating(false);
+                _.AllowAdding(false);
+                _.AllowDeleting(false);
+            })
+            .Columns(_ =>
+            {
+                _.AddFor(_ => _.UserName).Caption("User");
+                _.AddFor(_ => _.Details).Width(250);
+                _.AddFor(_ => _.OldValue).Width(250);
+                _.AddFor(_ => _.NewValue).Width(250);
+                _.AddFor(_ => _.DateOccured).DataType(GridColumnDataType.DateTime);
+                _.AddFor(_ => _.State).Caption("Audit Action");
+            })
+        )
+    }
+</div>
+
+<div id="data-grid-demo">
+    @(
+        Html.DevExtreme().DataGrid<Payroll.Models.Employee>()
+        .ID("gridContainer")
+        .ShowBorders(true)
+        .Paging(_ => _.Enabled(false))
+        .OnDataErrorOccurred("onDataErrorOccured")
+        .Editing(_ =>
+        {
+            _.Mode(GridEditMode.Form);
+            _.RefreshMode(GridEditRefreshMode.Reshape);
+            _.UseIcons(true);
+            _.Texts(_ => _.AddRow("Add Employee"));
+            _.AllowUpdating(true);
+            _.AllowAdding(true);
+            _.AllowDeleting(true);
+        })
+        .Toolbar(toolbar =>
+        {
+            toolbar.Items(items =>
+            {
+                items.Add()
+            .Name("addRowButton")
+            .ShowText(ToolbarItemShowTextMode.Always);
+            }
+            );
+        })
+
+        .Columns(_ =>
+        {
+            _.AddFor(_ => _.EmployeeNumber)
+            .AllowEditing(false)
+            .EditorOptions(new
+            {
+                placeholder = "Will be generated.",
+            });
+
+            _.AddFor(_ => _.Email)
+            .ValidationRules(_ =>
+            {
+                _.AddEmail();
+            });
+
+            _.AddFor(_ => _.LastName)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Max(50).Message("Last name should be less than 50 characters");
+            });
+
+            _.AddFor(_ => _.FirstName)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Max(50).Message("Name should be less than 50 characters");
+            });
+
+            _.AddFor(_ => _.MiddleName)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Max(50).Message("Middle name should be less than 50 characters");
+            });
+
+            _.AddFor(_ => _.Initials)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Min(1).Max(3).Message("Initials should be 1 to 3 characters");
+            });
+
+            _.AddFor(_ => _.PreferredName)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Max(50).Message("Preferred name should be less than 50 characters");
+            });
+
+            _.AddFor(_ => _.MaidenName)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Max(50).Message("Maiden name should be less than 50 characters");
+            });
+
+            _.AddFor(_ => _.TitleId)
+                .Width(125)
+                .Lookup(_ => _
+                .DataSource(_ =>
+                    _.Mvc().Controller("EnumTitlesLookupWebAPI").LoadAction("Get").Key("TitleId")
+                )
+            .DisplayExpr("Description")
+            .ValueExpr("TitleId")
+            );
+
+            _.AddFor(_ => _.EmployeeRetired)
+            .FalseText("No")
+            .TrueText("Yes")
+            .ShowEditorAlways(false);
+        })
+        .DataSource(_ => _.Mvc()
+        .Controller("EmployeeWebAPI")
+        .LoadAction("Get")
+        .InsertAction("Post")
+        .UpdateAction("Put")
+        .DeleteAction("Delete")
+        .Key("EmployeeId")
+        )
+    )
+</div>
+
+<script src="/js/pages/EmployeeDetails.js"></script>

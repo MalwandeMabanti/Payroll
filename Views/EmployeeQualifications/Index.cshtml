@@ -1,0 +1,202 @@
+﻿@using Payroll.Core;
+
+@model Payroll.ViewModels.EmployeeRolesViewModel;
+
+<script type="text/javascript">
+    Qualifications = {
+        companyUser: @Json.Serialize(Model.IsCompanyUser)
+        }
+</script>
+
+<div class="d-flex justify-content-between mb-3">
+    <h2>Qualifications</h2>
+
+    @(Html.DevExtreme().Button()
+        .ID("auditBtn")
+        .ElementAttr("class", "button-info")
+        .Text("Audit")
+        .OnContentReady(
+        @<text>
+            function displayAuditButton(data){
+                const button = $("#auditBtn").dxButton("instance");
+                button.option({
+                    visible: Qualifications.companyUser ? true : false
+                })
+            }
+        </text>
+        )
+        .OnClick(
+        @<text>
+            function showInfo(data) {
+                const popup = $("#employee-popup").dxPopup("instance");
+                popup.option(
+                {
+                    contentTemplate: $("#popup-template")
+                });
+
+            const datagrid = $("#audit-datagrid").dxDataGrid("instance");
+
+            if (datagrid) {
+                datagrid.refresh();
+            }
+                popup.show();
+            }
+        </text>
+        )
+    )
+</div>
+
+
+
+@(Html.DevExtreme().Popup()
+    .ID("employee-popup")
+    .Width("80%")
+    .Height("auto")
+    .MaxHeight("80%")
+    .ShadingColor("rgba(0,0,0,0.3)")
+    .ShowTitle(true)
+    .Title("Audit History")
+    .DragEnabled(false)
+    .HideOnOutsideClick(true)
+    .ShowCloseButton(true)
+    .Position(_ => _
+        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+        .Collision(PositionResolveCollision.Fit, PositionResolveCollision.Fit)
+    )
+)
+
+@using (Html.DevExtreme().NamedTemplate("popup-template"))
+{
+    @(
+        Html.DevExtreme().DataGrid<Audit>()
+                    .Width("100%")
+                    .Height("100%")
+                    .ID("audit-datagrid")
+                    .WordWrapEnabled(true)
+                    .DataSource(_ => _.Mvc()
+                    .Controller("AuditWebAPI")
+                            .LoadAction("Get")
+                            .LoadParams(new { tableName = "EmployeeQualification" })
+                            )
+                            .KeyExpr("AuditID")
+                    .ShowBorders(true)
+                    .Scrolling(s => s
+                        .Mode(GridScrollingMode.Standard)
+                        .RowRenderingMode(GridRowRenderingMode.Standard)
+                        .ScrollByContent(true)
+                    )
+                    .Editing(_ => _
+                        .RefreshMode(GridEditRefreshMode.Reshape)
+                    )
+                    .Columns(_ =>
+                    {
+                        _.AddFor(_ => _.UserName).Caption("User");
+                        _.AddFor(_ => _.Details).Width(250);
+                        _.AddFor(_ => _.OldValue).Width(250);
+                        _.AddFor(_ => _.NewValue).Width(250);
+                        _.AddFor(_ => _.DateOccured).Format("yyyy/MM/dd - hh:mm:ss UTC").Width(200);
+                        _.AddFor(_ => _.State).Caption("Audit Action");
+                    })
+            )
+}
+
+@(Html.DevExtreme().DataGrid<EmployeeQualification>()
+    .ID("gridContainer")
+    .ShowBorders(true)
+    .Paging(paging => paging.Enabled(false))
+    .Sorting(sorting => sorting.Mode(GridSortingMode.Single))
+    .OnEditorPreparing("disableRelevantFields")
+    .RemoteOperations(true)
+    .Columns(_ =>
+    {
+        if (User.IsInRole(Constant.Roles.Company))
+        {
+            _.AddFor(_ => _.EmpId)
+            .Caption("Employee ID")
+            .SetCellValue("setCellValueQualifications")
+            .Lookup(_ => _
+                .DataSource(_ => _
+                .Mvc()
+                .Controller("EmployeeWebApI")
+                .LoadAction("Get")
+                .Key("EmployeeId")
+            )
+            .DisplayExpr(new JS("function(e) { return `${e.EmployeeNumber} - ${e.FirstName} ${e.LastName}`; }"))
+            .ValueExpr("EmployeeId"));
+        }
+
+        _.AddFor(_ => _.QualificationID)
+        .Caption("Qualification")
+        .Lookup(_ => _
+            .DataSource(_ => _
+                .Mvc()
+                .Controller("EmployeeQualificationWebAPI")
+                .LoadAction("QualificationsLookup")
+                .Key("QualificationsID")
+            )
+            .DisplayExpr("Description")
+            .ValueExpr("QualificationsID")
+            );
+
+        _.AddFor(_ => _.EducationLevelID)
+        .Caption("Education Level")
+        .Lookup(_ => _
+            .DataSource(_ => _
+                .Mvc()
+                .Controller("EmployeeQualificationWebAPI")
+                .LoadAction("EducationLevelLookup")
+                .Key("EducationLevelID")
+            )
+            .DisplayExpr("Description")
+            .ValueExpr("EducationLevelID")
+       );
+
+        _.AddFor(_ => _.Institution);
+
+        _.AddFor(_ => _.InstitutionType)
+
+        .Lookup(_ => _
+            .DataSource(_ => _
+                .Mvc()
+                .Controller("EmployeeQualificationWebAPI")
+                .LoadAction("InstitutionTypesLookup")
+                .Key("InstitutionTypeID")
+            )
+            .DisplayExpr("Description")
+            .ValueExpr("InstitutionTypeID")
+            );
+
+        _.AddFor(_ => _.InProgress);
+
+        _.AddFor(_ => _.DateCompleted)
+        .Format("d MMMM yyyy");
+    })
+    .DataSource(_ => _.Mvc()
+        .Controller("EmployeeQualificationWebAPI")
+        .LoadAction("LoadEmployeeQualifications")
+        .UpdateAction("Edit")
+        .InsertAction("Create")
+        .DeleteAction("Delete")
+        .Key("EmployeeQualificationID")
+    )
+    .Editing(_ => _
+        .Mode(GridEditMode.Form)
+        .UseIcons(true)
+        .Texts(_ => _.AddRow("Add Qualification"))
+        .AllowAdding(true)
+        .AllowUpdating(true)
+        .AllowDeleting(true)
+        .RefreshMode(GridEditRefreshMode.Reshape)
+    )
+    .Toolbar(toolbar =>
+    {
+        toolbar.Items(_ => _
+            .Add()
+            .Name("addRowButton")
+            .ShowText(ToolbarItemShowTextMode.Always)
+        );
+    })
+)
+
+<script type="text/javascript" src="~/js/pages/EmployeeQualifications.js"></script>

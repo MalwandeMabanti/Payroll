@@ -1,0 +1,1 @@
+﻿let example = "example ts file"

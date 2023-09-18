@@ -1,0 +1,169 @@
+﻿<link rel="stylesheet" href="~/css//pages/EmployeeDependant.css" />
+
+@model Payroll.ViewModels.EmployeeDependantViewModel
+
+<script type="text/javascript">
+    Dependants  = {
+        companyUser : @Json.Serialize(Model.IsCompanyUser)
+    }
+</script>
+
+@*<h2>Dependants</h2>*@
+
+<div class="emp__header">
+    <h2>Dependants</h2>
+
+    @(Html.DevExtreme().Button()
+        .ElementAttr("class", "button-info")
+        .Text("Audit")
+        .OnClick(@<text>
+            function showInfo(data) {
+            const popup = $("#audit-details").dxPopup("instance");
+            const datagrid = $("#audit-datagrid").dxDataGrid("instance");
+
+            if (datagrid) {
+            datagrid.refresh();
+            }
+
+            popup.show();
+            }
+        </text>)
+        )
+</div>
+
+<hr />
+
+<div id="audit-popup">
+    @(
+        Html.DevExtreme().Popup()
+        .ID("audit-details")
+        .MaxHeight(500)
+        .Height("auto")
+        .Width("80%")
+        .Container("body")
+        .ShowTitle(true)
+        .Title("Audit Trail: Employees")
+        .HideOnOutsideClick(true)
+        .DragEnabled(false)
+        .ShowCloseButton(true)
+        .Position(_ =>
+        _.At(HorizontalAlignment.Center, VerticalAlignment.Center)
+        )
+        .ContentTemplate(new TemplateName("popup-template"))
+        )
+
+    @using (Html.DevExtreme().NamedTemplate("popup-template"))
+    {
+        @(Html.DevExtreme().DataGrid<Payroll.Models.Audit>()
+            .ID("audit-datagrid")
+            .Scrolling(_ => _.UseNative(true))
+            .Height("100%")
+            .DataSource(_ => _.Mvc()
+            .Controller("AuditWebAPI")
+            .LoadAction("Get").LoadParams(new { tableName = "EmployeeDependant" })
+            )
+            .ShowBorders(true)
+            .ShowRowLines(true)
+            .WordWrapEnabled(true)
+            .Editing(_ =>
+            {
+                _.AllowUpdating(false);
+                _.AllowAdding(false);
+                _.AllowDeleting(false);
+            })
+            .Columns(_ =>
+            {
+                _.AddFor(_ => _.UserName).Caption("User");
+                _.AddFor(_ => _.Details).Width(250);
+                _.AddFor(_ => _.OldValue).Width(250);
+                _.AddFor(_ => _.NewValue).Width(250);
+                _.AddFor(_ => _.DateOccured);
+                _.AddFor(_ => _.State).Caption("Audit Action");
+            })
+            )
+    }
+</div>
+
+@(
+Html.DevExtreme().DataGrid<EmployeeDependant>()
+    .DataSource(_ => _.Mvc()
+        .Controller("EmployeeDependantWebAPI")
+        .LoadAction("Get")
+        .InsertAction("Create")
+        .UpdateAction("Edit")
+        .DeleteAction("Delete")
+        .Key("EmployeeDependantID")
+    )
+    .ErrorRowEnabled(true)
+    .OnDataErrorOccurred("onDataErrorOccurred")
+    .RemoteOperations(true)
+    .ShowBorders(true)
+    .OnEditorPreparing("onEditorPreparing")
+    .Columns(columns => {
+
+        if (Model.IsCompanyUser)
+        {
+            columns.AddFor(_ => _.EmployeeId)
+                .Caption("Employee Number")
+                .SetCellValue("setCellValue")
+                .Lookup(_ => _
+                    .DataSource(_ => _.Mvc()
+                    .Controller("EmployeeWebAPI")
+                    .LoadAction("Get")
+                    .Key("EmployeeId"))
+                    .ValueExpr("EmployeeId")
+                    .DisplayExpr("EmployeeNumber")
+                 );
+        }
+
+        columns.AddFor(_ => _.EffectiveDate)
+            .Visible(false)
+            .AllowEditing(true);
+
+        columns.AddFor(_ => _.DependantTypeID)
+            .Caption("Dependant Type")
+            .Lookup(_ => _
+            .DataSource(_ => _.Mvc()
+            .Controller("EmployeeDependantWebAPI")
+            .LoadAction("GetDependantTypes")
+            .Key("DependantTypeID"))
+            .ValueExpr("DependantTypeID")
+            .DisplayExpr("DependantType")
+        );
+
+        columns.AddFor(_ => _.FirstName);
+
+        columns.AddFor(_ => _.LastName);
+
+        columns.AddFor(_ => _.ContactNumber)
+            .Visible(false)
+            .AllowEditing(true);
+
+        columns.AddFor(_ => _.MedicalAidDependant)
+            .Caption("Is this a medical aid dependant?");
+
+        columns.AddFor(_ => _.BirthDate)
+            .Visible(false)
+            .AllowEditing(true);
+
+    })
+    .Editing(_ => _.Mode(GridEditMode.Form)
+        .UseIcons(true)
+        .Texts(_ => _.AddRow("Add Dependant"))
+        .AllowAdding(true)
+        .AllowDeleting(true)
+        .AllowUpdating(true)
+        .RefreshMode(GridEditRefreshMode.Reshape)
+        
+    )
+    .Toolbar(toolbar => { 
+        toolbar.Items(items => {
+            items.Add()
+                .Name("addRowButton")
+                .ShowText(ToolbarItemShowTextMode.Always);
+            }
+        );
+    })
+)
+
+<script src="~/js/pages/EmployeeDependants.js"></script>

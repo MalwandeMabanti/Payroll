@@ -1,0 +1,181 @@
+﻿@model Payroll.ViewModels.EmployeeAddressViewModel
+
+@{
+    ViewData["Title"] = "Employees Address";
+}
+
+<div class="emp__header">
+    <h2>Employee Addresses</h2>
+
+    @(Html.DevExtreme().Button()
+        .ElementAttr("class", "button-info")
+        .Text("Audit")
+        .OnClick(@<text>
+            function showInfo(data) {
+            const popup = $("#audit-details").dxPopup("instance");
+            const datagrid = $("#audit-datagrid").dxDataGrid("instance");
+
+            if (datagrid) {
+            datagrid.refresh();
+            }
+
+            popup.show();
+            }
+        </text>)
+        )
+</div>
+
+<hr />
+
+<div id="audit-popup">
+    @(
+        Html.DevExtreme().Popup()
+        .ID("audit-details")
+        .MaxHeight(500)
+        .Height("auto")
+        .Width("80%")
+        .Container("body")
+        .ShowTitle(true)
+        .Title("Audit Trail: Employees")
+        .HideOnOutsideClick(true)
+        .DragEnabled(false)
+        .ShowCloseButton(true)
+        .Position(_ =>
+        _.At(HorizontalAlignment.Center, VerticalAlignment.Center)
+        )
+        .ContentTemplate(new TemplateName("popup-template"))
+        )
+
+    @using (Html.DevExtreme().NamedTemplate("popup-template"))
+    {
+        @(Html.DevExtreme().DataGrid<Payroll.Models.Audit>()
+            .ID("audit-datagrid")
+            .Scrolling(_ => _.UseNative(true))
+            .Height("100%")
+            .DataSource(_ => _.Mvc()
+            .Controller("AuditWebAPI")
+            .LoadAction("Get").LoadParams(new { tableName = "EmployeeAddress" })
+            )
+            .ShowBorders(true)
+            .ShowRowLines(true)
+            .WordWrapEnabled(true)
+            .Editing(_ =>
+            {
+                _.AllowUpdating(false);
+                _.AllowAdding(false);
+                _.AllowDeleting(false);
+            })
+            .Columns(_ =>
+            {
+                _.AddFor(_ => _.UserName).Caption("User");
+                _.AddFor(_ => _.Details).Width(250);
+                _.AddFor(_ => _.OldValue).Width(250);
+                _.AddFor(_ => _.NewValue).Width(250);
+                _.AddFor(_ => _.DateOccured);
+                _.AddFor(_ => _.State).Caption("Audit Action");
+            })
+            )
+    }
+</div>
+
+<div id="gridContainer"></div>
+
+@(
+Html.DevExtreme().DataGrid<Payroll.Models.EmployeeAddress>()
+    .ID("gridContainer")
+    .ShowBorders(true)
+    .Editing(editing =>
+    {
+        editing.Mode(GridEditMode.Form);
+        editing.UseIcons(true);
+        editing.Texts(_ => _.AddRow("Add Address"));
+        editing.RefreshMode(GridEditRefreshMode.Reshape);
+        editing.AllowUpdating(true);
+        editing.AllowDeleting(Model.IsCompanyUser);
+        editing.AllowAdding(Model.IsCompanyUser);
+    })
+
+    .Toolbar(toolbar => {
+        toolbar.Items(items => {
+            items.Add()
+                .Name("addRowButton")
+                .ShowText(ToolbarItemShowTextMode.Always);
+        });
+    })
+
+    .Columns(columns =>
+    {
+        if (Model.IsCompanyUser) // FIXME: Use .Visible to hide column
+        {
+            columns.AddFor(_ => _.EmployeeId)
+                .Caption("Employee Number")
+                .Lookup(lookup => lookup
+                .DataSource(_ => _.Mvc()
+                    .Controller("EmployeeWebAPI")
+                    .LoadAction("Get")
+                    .Key("EmployeeId"))
+                .ValueExpr("EmployeeId")
+                .DisplayExpr("EmployeeNumber"))
+                .ValidationRules(_ => _.AddRequired());
+        }
+
+        columns.AddFor(_ => _.UnitNumber)
+            .ValidationRules(_ => _.AddStringLength()
+                .Max(20)
+                .Message("Length should be 20 or less"));
+
+        columns.AddFor(_ => _.ComplexName)
+            .ValidationRules(_ => _.AddStringLength()
+                .Max(50)
+                .Message("Length should be 50 or less"));
+
+        columns.AddFor(_ => _.StreetNumber)
+            .ValidationRules(_ => _.AddStringLength()
+                .Max(10)
+                .Message("Length should be 10 or less"));
+
+        columns.AddFor(_ => _.StreetName)
+            .ValidationRules(_ => _.AddStringLength()
+                .Max(10)
+                .Message("Length should be 10 or less"));
+
+        columns.AddFor(_ => _.Suburb)
+            .ValidationRules(_ => _.AddStringLength()
+                .Max(50)
+                .Message("Length should be 50 or less"));
+
+        columns.AddFor(_ => _.City)
+            .ValidationRules(_ => _.AddStringLength()
+                .Max(50)
+                .Message("Length should be 50 or less"));
+
+        columns.AddFor(_ => _.Code)
+            .ValidationRules(_ => _.AddStringLength()
+                .Max(10)
+                .Message("Length should be 10 or less"));
+
+        columns.AddFor(_ => _.CountryId)
+            .Caption("Country")
+            .Lookup(lookup => lookup
+            .DataSource(_ => _.Mvc()
+                .Controller("EnumCountryWebAPI")
+                .LoadAction("Get")
+                .Key("CountryId"))
+            .DisplayExpr("Country")
+            .ValueExpr("CountryId"))
+            .ValidationRules(_ => _.AddRequired());
+    })
+
+    .DataSource(_ => _.Mvc()
+        .Controller("EmployeeAddressWebAPI")
+        .LoadAction("Get")
+        .UpdateAction("Put")
+        .DeleteAction("Delete")
+        .InsertAction("Create")
+        .Key("AddressId")
+    )
+
+    .OnEditorPreparing("employeeAddressOnEditorPreparing")
+)
+
+<script src="~/js/pages/EmployeeAddress.js"></script>

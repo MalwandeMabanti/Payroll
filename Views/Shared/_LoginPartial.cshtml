@@ -1,0 +1,39 @@
+﻿@using Microsoft.AspNetCore.Identity
+
+@using Payroll.Data
+@using Payroll.Core
+
+@inject SignInManager<PayrollUser> SignInManager
+@inject UserManager<PayrollUser> UserManager
+
+<ul class="navbar-nav">
+@if (SignInManager.IsSignedIn(User))
+{
+    var payrollUser = (PayrollUser)await UserManager.GetUserAsync(User);
+    <li class="nav-item">
+        <a id="manage" class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @payrollUser.FirstName!</a>
+    </li>
+
+    if (User.IsInRole(Constant.Roles.Company))
+    {
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="UserManagement" asp-action="Index" title="Manage">User Management</a>
+        </li>
+    }
+
+    <li class="nav-item">
+        <form id="logoutForm" class="form-inline" asp-controller="Authentication" asp-action="Logout" asp-route-returnUrl="@Url.Action("Index", "Authentication", new { area = "" })">
+            <button id="logout" type="submit" class="nav-link btn btn-link">Logout</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Authentication" asp-action="Register">Register</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Authentication" asp-action="Index">Login</a>
+    </li>
+}
+</ul>

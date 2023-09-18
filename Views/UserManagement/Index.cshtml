@@ -1,0 +1,64 @@
+﻿@{
+    ViewData["title"] = "Manage Company Users";
+}
+
+<h2>Company Users</h2>
+
+<div id="data-grid-demo">
+    @(
+        Html.DevExtreme().DataGrid<Payroll.Models.CompanyUser>()
+        .ID("gridContainer")
+        .ShowBorders(true)
+        .Paging(_ => _.Enabled(false))
+        .Editing(_ =>
+        {
+            _.Mode(GridEditMode.Form);
+            _.RefreshMode(GridEditRefreshMode.Reshape);
+            _.UseIcons(true);
+            _.Texts(_ => _.AddRow("Add Company User"));
+            _.AllowUpdating(true);
+            _.AllowAdding(true);
+            _.AllowDeleting(true);
+        })
+        .Toolbar(toolbar =>
+        {
+            toolbar.Items(items =>
+            {
+                items.Add()
+            .Name("addRowButton")
+            .ShowText(ToolbarItemShowTextMode.Always);
+            }
+            );
+        })
+
+        .Columns(_ =>
+        {
+
+            _.AddFor(_ => _.CompanyUserFirstName)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Max(50).Message("Name should be less than 50 characters");
+            });
+
+            _.AddFor(_ => _.CompanyUserLastName)
+            .ValidationRules(_ =>
+            {
+                _.AddStringLength().Max(50).Message("Last name should be less than 50 characters");
+            });
+
+            _.AddFor(_ => _.Email)
+            .ValidationRules(_ =>
+            {
+                _.AddEmail();
+            });
+        })
+        .DataSource(_ => _.Mvc()
+        .Controller("CompanyUserWebAPI")
+        .LoadAction("Get")
+        .InsertAction("Post")
+        .UpdateAction("Put")
+        .DeleteAction("Delete")
+        .Key("CompanyUserId")
+        )
+        )
+</div>
